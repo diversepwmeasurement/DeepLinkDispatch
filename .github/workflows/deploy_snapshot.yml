@@ -1,28 +1,29 @@
-name: Deploy snapshot
-
-on:
-  # Trigger ONLY on push to master branch
-  push:
-    branches:
-      - master
 jobs:
   build-test:
     uses: airbnb/DeepLinkDispatch/.github/workflows/build_test.yml@master
   deploy-snapshot:
     needs: build-test
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - name: Checkout DeepLinkDispatch
-        uses: actions/checkout@v2
-      - name: Update gradle.properties
-        uses: DamianReeves/write-file-action@master
-        with:
-          path: gradle.properties
-          write-mode: append
-          contents: |
-            mavenCentralUsername=${{ secrets.NEXUS_USER }}
-            mavenCentralPassword=${{ secrets.NEXUS_PASSWORD }}
+    - continue-on-error: true
+      name: Checkout DeepLinkDispatch
+      uses: actions/checkout@v2
+    - continue-on-error: true
+      name: Update gradle.properties
+      uses: DamianReeves/write-file-action@master
+      with:
+        contents: 'mavenCentralUsername=${{ secrets.NEXUS_USER }}
 
-      - name: Deploy new snapshot of DeepLinkDispatch
-        shell: bash
-        run: ./gradlew -PenforceSnapshotVersion=true publishAllPublicationsToMavenCentral
+          mavenCentralPassword=${{ secrets.NEXUS_PASSWORD }}
+
+          '
+        path: gradle.properties
+        write-mode: append
+    - continue-on-error: true
+      name: Deploy new snapshot of DeepLinkDispatch
+      run: ./gradlew -PenforceSnapshotVersion=true publishAllPublicationsToMavenCentral
+      shell: bash
+name: Deploy snapshot
+on:
+  repository_dispatch:
+    types: trigger-ga___deploy_snapshot.yml
